@@ -12,6 +12,8 @@ kNN support/disagreement) into four quadrants:
 No second model. TabPFN uncertainty + TabPFN geometry. Acquisition takes
 UNKNOWN first (k-center diversified), skips AMBIGUOUS.
 
+![quadrants](figs/quadrants.png)
+
 ## Reproduce
 
 ```bash
@@ -30,3 +32,5 @@ atlas 0.886 (best *active* method), jepa-kcenter 0.855, entropy 0.365.
 Entropy's picks are 64% UNKNOWN — the quadrant doesn't save you; within-type
 concentration still kills. Quadrant tells the type; diversity within type
 does the work.
+
+![atlas budget curves](figs/atlas_budget.png)
