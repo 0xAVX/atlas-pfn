@@ -1,0 +1,32 @@
+# PFN Atlas — separate "unknown" from "ambiguous"
+
+TabPFN-3.5 says "I'm uncertain." **Why?** Atlas crosses TabPFN's own
+uncertainty (OOF entropy) with its own geometry (internal test-embeddings +
+kNN support/disagreement) into four quadrants:
+
+- **UNKNOWN** (high entropy, low support) → label this
+- **AMBIGUOUS** (high entropy, high support + disagreement) → skip
+- **OOD-CONFIDENT** (low entropy, low support) → don't trust it
+- **KNOWN** → easy
+
+No second model. TabPFN uncertainty + TabPFN geometry. Acquisition takes
+UNKNOWN first (k-center diversified), skips AMBIGUOUS.
+
+## Reproduce
+
+```bash
+<venv-python> experiments/run.py   # figs/atlas.csv
+<venv-python> demo/app.py          # point inspector + budget view
+```
+
+## Findings (`figs/atlas.csv`, phoneme)
+
+Clean budgets — atlas wins every row (random / entropy / jepa-kcenter / atlas):
+5%: 0.898 / 0.657 / 0.868 / **0.878**; 10%: 0.913 / 0.487 / 0.914 / **0.918**;
+20%: 0.925 / 0.806 / 0.933 / **0.940**; 40%: 0.946 / 0.953 / 0.959 / **0.961**.
+
+Poison pool (10% flipped, 10% budget): random 0.902 (risk-spreading holds up),
+atlas 0.886 (best *active* method), jepa-kcenter 0.855, entropy 0.365.
+Entropy's picks are 64% UNKNOWN — the quadrant doesn't save you; within-type
+concentration still kills. Quadrant tells the type; diversity within type
+does the work.
