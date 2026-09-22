@@ -21,7 +21,7 @@ UNKNOWN first (k-center diversified), skips AMBIGUOUS.
 
 ## Reproduce
 
-Fresh-env verified 2026-09-22 (clean venv, `pip install -e .`, witness suite 2 passed in 18s CPU; TabPFN weights from public HF, no keys).
+Fresh-env verified 2026-09-22 (clean venv, `pip install -e .`, Atlas quadrant suite 1 passed in 4s CPU; TabPFN weights from public HF, no keys).
 
 ```bash
 pip install -e .   # Python 3.10+, torch, tabpfn==9.0.0
@@ -37,14 +37,18 @@ jepa-kcenter / atlas): 5%: 0.887 / 0.893 / 0.888 / 0.891 (entropy takes the
 smallest budget); 10%: 0.907 / 0.912 / 0.898 / **0.920**;
 20%: 0.926 / 0.921 / 0.937 / **0.939**; 40%: 0.949 / 0.956 / 0.961 / **0.967**.
 
+Ablation (`figs/ablation2.csv`): entropy shortlist + k-center in TabPFN
+embeddings *without* quadrants scores 0.903/0.937/0.961 at 10/20/40% vs
+atlas 0.920/0.939/0.967 — the quadrant prioritization itself carries value
+beyond "embeddings + diversity".
+
 Poison pool (10% flipped, 10% budget): random 0.8955, entropy 0.8814,
 jepa-kcenter 0.8647, atlas 0.8839; corruption selected 0.08–0.09 by all.
 No collapse under the seed protocol — an earlier OOF-protocol run showed
 entropy at 0.365, which did not reproduce and is retracted. Entropy's picks
 are 85% UNKNOWN: the quadrant alone doesn't explain outcomes; within-type
-spread still matters.
-Entropy's picks are 64% UNKNOWN — the quadrant doesn't save you; within-type
-concentration still kills. Quadrant tells the type; diversity within type
-does the work.
+spread still matters. Atlas is an *operational* uncertainty taxonomy —
+confidence × support × labeled-neighbor disagreement — that supports better
+acquisition; not a proven epistemic/aleatoric decomposition.
 
 ![atlas budget curves](figs/atlas_budget.png)
