@@ -1,5 +1,10 @@
 # PFN Atlas — separate "unknown" from "ambiguous"
 
+> **Why this matters (20s):** TabPFN says "uncertain" — but should you label
+> that point? Atlas crosses TabPFN's uncertainty with its own embedding
+> geometry to tell *unknown* (label this) from *ambiguous* (skip it),
+> beating entropy and random acquisition on hard tasks with zero new models.
+
 TabPFN-3.5 says "I'm uncertain." **Why?** Atlas crosses TabPFN's own
 uncertainty (OOF entropy) with its own geometry (internal test-embeddings +
 kNN support/disagreement) into four quadrants:
