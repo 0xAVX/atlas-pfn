@@ -1,0 +1,8 @@
+tabpfn==9.0.0
+pandas
+numpy
+scikit-learn
+scipy
+torch
+flask
+matplotlib

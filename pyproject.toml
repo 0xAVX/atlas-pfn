@@ -1,0 +1,20 @@
+[project]
+name = "pfn-atlas"
+version = "0.1.0"
+description = "PFN Atlas: separate unknown from ambiguous with TabPFN-3.5"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+dependencies = [
+    "tabpfn==9.0.0",
+    "pandas",
+    "numpy",
+    "scikit-learn",
+    "scipy",
+    "torch",
+    "flask",
+    "matplotlib",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

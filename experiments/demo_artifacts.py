@@ -12,13 +12,9 @@ import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 
-sys.path.insert(0, "/home/dead/pfn-atlas/src")
-sys.path.insert(0, "/home/dead/pfn-jepa/src")
-sys.path.insert(0, "/home/dead/pfn-jepa/experiments")
-sys.path.insert(0, "/home/dead/playground-series-s6e9")
 from atlas.core import acquire, atlas_frame, seed_embeddings
-from pfn_jepa.crossfit import oof_uncertainty
-from run_matrix import openml_binary
+from atlas.data import kcenter, openml_binary, seed_predict_entropy, seed_split, tabpfn_predict_proba
+from atlas.jepa_lite import embed, prep, train_plug
 
 SEED = 0
 
@@ -32,11 +28,16 @@ def main():
     idx = np.random.RandomState(SEED).choice(len(Xpool), 3404, replace=False)
     Xpool, ypool = Xpool.iloc[idx].reset_index(drop=True), ypool[idx]
 
-    u = oof_uncertainty(Xpool, ypool, seed=SEED)
-    ad, Z = atlas_frame(Xpool, ypool, u["entropy"].values, seed=SEED)
+    from tabpfn import TabPFNClassifier
+    sidx = seed_split(ypool)
+    seed_clf = TabPFNClassifier(random_state=SEED)
+    seed_clf.fit(Xpool.iloc[sidx], ypool[sidx])
+    oof = np.clip(seed_clf.predict_proba(Xpool)[:, 1], 1e-6, 1 - 1e-6)
+    ent = -(oof * np.log(oof) + (1 - oof) * np.log(1 - oof))
+    ad, Z = atlas_frame(Xpool, ypool, ent, seed=SEED, seed_idx=sidx)
     k = 340
     sels = {"random": np.random.RandomState(1).choice(len(ypool), k, replace=False),
-            "entropy": np.argsort(-u["entropy"].values)[:k],
+            "entropy": np.argsort(-ent)[:k],
             "atlas": acquire(ad, Z, k)}
     xy = PCA(n_components=2, random_state=0).fit_transform(
         (Z - Z.mean(0)) / (Z.std(0) + 1e-9)).astype(np.float32)
@@ -45,8 +46,8 @@ def main():
     corr = np.zeros(len(ypool), bool)
     corr[rng.choice(len(ypool), int(0.10 * len(ypool)), replace=False)] = True
     out = {"xy": xy, "y": ypool.astype(np.int64), "corr": corr,
-           "p_oof": u["p_oof"].values.astype(np.float32),
-           "entropy": u["entropy"].values.astype(np.float32),
+           "p_oof": oof.astype(np.float32),
+           "entropy": ent.astype(np.float32),
            "support": ad["support"].values.astype(np.float32),
            "disagree": ad["disagree"].values.astype(np.float32),
            "quad": np.array(ad["quad"].tolist())}

@@ -1,0 +1,11 @@
+LICENSE
+README.md
+pyproject.toml
+src/atlas/core.py
+src/atlas/data.py
+src/atlas/jepa_lite.py
+src/pfn_atlas.egg-info/PKG-INFO
+src/pfn_atlas.egg-info/SOURCES.txt
+src/pfn_atlas.egg-info/dependency_links.txt
+src/pfn_atlas.egg-info/requires.txt
+src/pfn_atlas.egg-info/top_level.txt

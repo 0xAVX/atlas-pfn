@@ -11,24 +11,20 @@ import numpy as np
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 
-sys.path.insert(0, "/home/dead/pfn-atlas/src")
-sys.path.insert(0, "/home/dead/pfn-jepa/src")
-sys.path.insert(0, "/home/dead/playground-series-s6e9")
 from atlas.core import acquire, atlas_frame
-from pfn_jepa.crossfit import oof_uncertainty
-from src.ev import load, stratified_subsample, tabpfn_predict_proba
+from atlas.data import load_s6e9, oof_entropy, stratified_subsample, tabpfn_predict_proba
 
 SEED = 0
 
 
 def main():
     t0 = time.time()
-    X, y, _, _, _ = load("/home/dead/playground-series-s6e9/data")
+    X, y, _, _, _ = load_s6e9("data")
     Xp, yp = stratified_subsample(X, y, 20000, seed=SEED)
     Xctx_pool, Xval, yctx_pool, yval = train_test_split(
         Xp, yp, test_size=10000, stratify=yp, random_state=1)
-    u = oof_uncertainty(Xctx_pool, yctx_pool, seed=SEED)
-    ad, Z = atlas_frame(Xctx_pool, yctx_pool, u["entropy"].values, seed=SEED)
+    _, ent = oof_entropy(Xctx_pool, yctx_pool, seed=SEED)
+    ad, Z = atlas_frame(Xctx_pool, yctx_pool, ent, seed=SEED)
     out = []
     for name, sel in [
             ("random", np.random.RandomState(1).choice(len(Xctx_pool), 10000,

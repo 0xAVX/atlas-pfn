@@ -1,5 +1,8 @@
-"""Validate Atlas: (1) poison phoneme — atlas vs entropy/random/jepa-kcenter,
-(2) clean budget curve for atlas. Saves figs/atlas.csv.
+"""Validate Atlas under a real seed protocol (no pool-label leakage).
+
+5% stratified seed labeled. Entropy from seed-fit TabPFN on unlabeled rows;
+quadrants/disagreement from seed labels only. Budgets count total labels.
+(1) clean budget curve, (2) poison phoneme. Saves figs/atlas.csv.
 """
 from __future__ import annotations
 
@@ -12,16 +15,9 @@ import pandas as pd
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 
-sys.path.insert(0, "/home/dead/pfn-atlas/src")
-sys.path.insert(0, "/home/dead/pfn-jepa/src")
-sys.path.insert(0, "/home/dead/pfn-jepa/experiments")
-sys.path.insert(0, "/home/dead/playground-series-s6e9")
 from atlas.core import acquire, atlas_frame
-from pfn_jepa.crossfit import oof_uncertainty
-from pfn_jepa.jepa import embed, prep, train_plug
-from selection import kcenter
-from run_matrix import openml_binary
-from src.ev import tabpfn_predict_proba
+from atlas.data import kcenter, openml_binary, seed_predict_entropy, seed_split, tabpfn_predict_proba
+from atlas.jepa_lite import embed, prep, train_plug
 
 SEED = 0
 
@@ -35,21 +31,31 @@ def main():
     idx = np.random.RandomState(SEED).choice(len(Xpool), 3404, replace=False)
     Xpool, ypool = Xpool.iloc[idx].reset_index(drop=True), ypool[idx]
     rows = []
+    seed_idx = seed_split(ypool)
+    unl = np.array([i for i in range(len(ypool)) if i not in set(seed_idx)])
+    n_seed = len(seed_idx)
 
     # clean budget curve
-    u = oof_uncertainty(Xpool, ypool, seed=SEED)
-    ad, Z = atlas_frame(Xpool, ypool, u["entropy"].values, seed=SEED)
+    ent_all = seed_predict_entropy(Xpool, ypool, seed_idx)
+    ad, Z = atlas_frame(Xpool, ypool, ent_all, seed=SEED, seed_idx=seed_idx)
     print("quadrant mix:", ad["quad"].value_counts(normalize=True).round(2).to_dict(),
           flush=True)
     Xp, _ = prep(Xpool)
     net, dev = train_plug(Xp, epochs=5, d_lat=32, seed=SEED)
-    Zj = embed(net, dev, Xp)
+    Zj = embed(net, dev, Xp)[unl]
+    Zr = (Xp / (np.abs(Xp).max(axis=0) + 1e-9))[unl]
+    Zu, ent = Z[unl], ent_all[unl]
+    pos = np.argsort(-ent)
     for b in [0.05, 0.1, 0.2, 0.4]:
-        k = max(50, int(len(ypool) * b))
-        sels = {"random": np.random.RandomState(1).choice(len(ypool), k, replace=False),
-                "entropy": np.argsort(-u["entropy"].values)[:k],
-                "jepa-kcenter": kcenter(Zj, k),
-                "atlas": acquire(ad, Z, k)}
+        k = max(n_seed + 25, int(len(ypool) * b))
+        need = k - n_seed
+        take = lambda s: np.concatenate([seed_idx, unl[s]])
+        sels = {"random": take(np.random.RandomState(1).choice(len(unl), need,
+                                                               replace=False)),
+                "entropy": take(pos[:need]),
+                "jepa-kcenter": take(kcenter(Zj, need)),
+                "atlas": take(acquire(ad.iloc[unl].reset_index(drop=True),
+                                      Zu, need))}
         for sname, sel in sels.items():
             p = tabpfn_predict_proba(Xpool.iloc[sel], ypool[sel], Xval, seed=SEED)
             a = roc_auc_score(yval, p)
@@ -62,20 +68,28 @@ def main():
     corr[rng.choice(len(ypool), int(0.10 * len(ypool)), replace=False)] = True
     y_dirty = ypool.copy()
     y_dirty[corr] = 1 - y_dirty[corr]
-    ud = oof_uncertainty(Xpool, y_dirty, seed=SEED)
-    add, Zd = atlas_frame(Xpool, y_dirty, ud["entropy"].values, seed=SEED)
-    k = 340
-    ent_sel = np.argsort(-ud["entropy"].values)[:k]
+    seed_d = seed_split(y_dirty)
+    unl_d = np.array([i for i in range(len(ypool)) if i not in set(seed_d)])
+    ent_d = seed_predict_entropy(Xpool, y_dirty, seed_d)[unl_d]
+    add, Zd = atlas_frame(Xpool, y_dirty, seed_predict_entropy(Xpool, y_dirty, seed_d),
+                          seed=SEED, seed_idx=seed_d)
+    Zd, entpos = Zd[unl_d], np.argsort(-ent_d)
+    k = 340 - len(seed_d)
+    ent_sel = unl_d[entpos[:k]]
     print("entropy picks quadrant mix:",
           add.iloc[ent_sel]["quad"].value_counts(normalize=True).round(2).to_dict(),
           flush=True)
     Xpd, _ = prep(Xpool)
     netd, devd = train_plug(Xpd, epochs=5, d_lat=32, seed=SEED)
-    Zjd = embed(netd, devd, Xpd)
-    sels = {"random": np.random.RandomState(1).choice(len(ypool), k, replace=False),
-            "entropy": ent_sel,
-            "jepa-kcenter": kcenter(Zjd, k),
-            "atlas": acquire(add, Zd, k)}
+    Zjd = embed(netd, devd, Xpd)[unl_d]
+    sels = {"random": np.concatenate(
+                [seed_d, unl_d[np.random.RandomState(1).choice(len(unl_d), k,
+                                                               replace=False)]]),
+            "entropy": np.concatenate([seed_d, ent_sel]),
+            "jepa-kcenter": np.concatenate([seed_d, unl_d[kcenter(Zjd, k)]]),
+            "atlas": np.concatenate(
+                [seed_d, unl_d[acquire(add.iloc[unl_d].reset_index(drop=True),
+                                       Zd, k)]])}
     for sname, sel in sels.items():
         p = tabpfn_predict_proba(Xpool.iloc[sel], y_dirty[sel], Xval, seed=SEED)
         a = roc_auc_score(yval, p)

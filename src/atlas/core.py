@@ -18,9 +18,13 @@ from sklearn.neighbors import NearestNeighbors
 from tabpfn import TabPFNClassifier
 
 
-def seed_embeddings(X: pd.DataFrame, y: np.ndarray, frac=0.05, seed=0):
-    n_seed = max(50, int(len(X) * frac))
-    sidx = np.random.RandomState(seed + 1).choice(len(X), n_seed, replace=False)
+def seed_embeddings(X: pd.DataFrame, y: np.ndarray, frac=0.05, seed=0,
+                    fixed_idx=None):
+    if fixed_idx is None:
+        n_seed = max(50, int(len(X) * frac))
+        sidx = np.random.RandomState(seed + 1).choice(len(X), n_seed, replace=False)
+    else:
+        sidx = np.asarray(fixed_idx)
     clf = TabPFNClassifier(random_state=seed)
     clf.fit(X.iloc[sidx], y[sidx])
     Z = clf.get_embeddings(X).mean(axis=0)
@@ -32,12 +36,18 @@ def knn_stats(Z: np.ndarray, y: np.ndarray, labeled_idx: np.ndarray, k=15):
     dist, ind = nn.kneighbors(Z)
     lab = labeled_idx[ind]
     support = 1.0 / (1.0 + dist.mean(axis=1))
-    dis = np.array([(y[r] != y[r[0]]).mean() if len(r) else 0.0 for r in lab])
+    # disagreement uses LABELED neighbors only (pool labels stay hidden)
+    labset = set(np.asarray(labeled_idx).tolist())
+    dis = np.zeros(len(Z))
+    for r in range(len(Z)):
+        lr = [j for j in lab[r] if j in labset]
+        dis[r] = (y[lr] != y[lr[0]]).mean() if len(lr) > 1 else 0.0
     return support, dis
 
 
-def atlas_frame(X: pd.DataFrame, y: np.ndarray, ent: np.ndarray, seed=0):
-    Z, sidx = seed_embeddings(X, y, seed=seed)
+def atlas_frame(X: pd.DataFrame, y: np.ndarray, ent: np.ndarray, seed=0,
+                seed_idx=None):
+    Z, sidx = seed_embeddings(X, y, seed=seed, fixed_idx=seed_idx)
     support, dis = knn_stats(Z, y, sidx)
     u_hi = ent >= np.median(ent)
     s_lo = support < np.median(support)
