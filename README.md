@@ -5,6 +5,8 @@
 > geometry to tell *unknown* (label this) from *ambiguous* (skip it),
 > beating entropy and random acquisition on hard tasks with zero new models.
 
+![acquisition order](figs/atlas.gif)
+
 TabPFN-3.5 says "I'm uncertain." **Why?** Atlas crosses TabPFN's own
 uncertainty (seed-fit predictive entropy) with its own geometry (internal test-embeddings +
 kNN support/disagreement) into four quadrants:
