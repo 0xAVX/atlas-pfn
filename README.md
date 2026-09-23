@@ -11,8 +11,8 @@ TabPFN-3.5 says "I'm uncertain." **Why?** Atlas crosses TabPFN's own
 uncertainty (seed-fit predictive entropy) with its own geometry (internal test-embeddings +
 kNN support/disagreement) into four quadrants:
 
-- **UNKNOWN** (high entropy, low support) → label this
-- **AMBIGUOUS** (high entropy, high support + disagreement) → skip
+- **UNKNOWN** (high entropy, low support) → prioritize
+- **AMBIGUOUS** (high entropy, high support + disagreement) → deprioritize
 - **OOD-CONFIDENT** (low entropy, low support) → don't trust it
 - **KNOWN** → easy
 
@@ -28,6 +28,7 @@ Fresh-env verified 2026-09-22 (clean venv, `pip install -e .`, Atlas quadrant su
 ```bash
 pip install -e .   # Python 3.10+, torch, tabpfn==9.0.0
 <venv-python> experiments/run.py   # figs/atlas.csv (phoneme via OpenML auto-download)
+<venv-python> experiments/ablation2.py   # figs/ablation2.csv (quadrant logic vs generic diversity)
 <venv-python> demo/app.py          # point inspector + budget view (port 5002)
 ```
 
