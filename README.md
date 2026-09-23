@@ -2,7 +2,7 @@
 
 > **Why this matters (20s):** TabPFN says "uncertain" — but should you label
 > that point? Atlas crosses TabPFN's uncertainty with its own embedding
-> geometry to tell *unknown* (label this) from *ambiguous* (skip it),
+> geometry to tell *unknown* (prioritize) from *ambiguous* (deprioritize),
 > beating entropy and random acquisition on hard tasks with zero new models.
 
 ![acquisition order](figs/atlas.gif)
