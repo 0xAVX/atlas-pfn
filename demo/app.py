@@ -32,8 +32,8 @@ Point index (0-{{n}}): <input name=i value="{{i}}" size=6><input type=submit val
 <table border=1 cellpadding=4><tr><th>budget</th><th>random</th><th>entropy</th>
 <th>jepa-kcenter</th><th>atlas</th></tr>
 {% for b, r, e, j, a in rows %}<tr><td>{{b}}</td><td>{{r}}</td><td>{{e}}</td><td>{{j}}</td><td><b>{{a}}</b></td></tr>{% endfor %}</table>
-<p>Poison pool (10% flipped): random 0.902, atlas 0.886, entropy 0.365 — same ~8%
-corruption selected by all. Concentration kills, not quantity.</p>
+<p>Poison pool (10% flipped, seed protocol): random 0.8955, entropy 0.8814,
+atlas 0.8839 — all strategies select ~0.08–0.09 corruption, so no collapse.</p>
 {% endif %}
 <h3>Atlas</h3>{{svg|safe}}
 """

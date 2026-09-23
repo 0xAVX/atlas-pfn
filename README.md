@@ -7,6 +7,15 @@
 
 ![acquisition order](figs/atlas.gif)
 
+## Demo
+
+Point inspector on an UNKNOWN (prioritize) and an AMBIGUOUS (deprioritize)
+point, plus the budget view, from the live demo:
+
+| UNKNOWN → prioritize | AMBIGUOUS → deprioritize | Budget view |
+|---|---|---|
+| ![UNKNOWN point](media/02_unknown.png) | ![AMBIGUOUS point](media/03_ambiguous.png) | ![budget view](media/04_budget.png) |
+
 TabPFN-3.5 says "I'm uncertain." **Why?** Atlas crosses TabPFN's own
 uncertainty (seed-fit predictive entropy) with its own geometry (internal test-embeddings +
 kNN support/disagreement) into four quadrants:
