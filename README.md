@@ -6,7 +6,7 @@
 > beating entropy and random acquisition on hard tasks with zero new models.
 
 TabPFN-3.5 says "I'm uncertain." **Why?** Atlas crosses TabPFN's own
-uncertainty (OOF entropy) with its own geometry (internal test-embeddings +
+uncertainty (seed-fit predictive entropy) with its own geometry (internal test-embeddings +
 kNN support/disagreement) into four quadrants:
 
 - **UNKNOWN** (high entropy, low support) → label this
